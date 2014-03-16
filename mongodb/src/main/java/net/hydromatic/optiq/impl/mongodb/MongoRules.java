@@ -39,9 +39,10 @@ public class MongoRules {
   private MongoRules() {}
 
   public static final RelOptRule[] RULES = {
-    new PushProjectOntoMongoRule(),
-    new MongoSortRule(),
-    new MongoFilterRule(),
+//    new PushProjectOntoMongoRule(),
+    MongoSortRule.INSTANCE,
+    MongoFilterRule.INSTANCE,
+    MongoProjectRule.INSTANCE,
   };
 
   /** Rule that combines a {@link ProjectRel} with a {@link MongoTableScan},
@@ -180,13 +181,11 @@ public class MongoRules {
    * Rule to convert a {@link org.eigenbase.rel.SortRel} to a
    * {@link MongoSortRel}.
    */
-  private static class MongoSortRule
-      extends MongoConverterRule {
+  private static class MongoSortRule extends MongoConverterRule {
+    public static final MongoSortRule INSTANCE = new MongoSortRule();
+
     private MongoSortRule() {
-      super(
-          SortRel.class,
-          Convention.NONE,
-          MongoRel.CONVENTION,
+      super(SortRel.class, Convention.NONE, MongoRel.CONVENTION,
           "MongoSortRule");
     }
 
@@ -208,11 +207,10 @@ public class MongoRules {
    * {@link MongoFilterRel}.
    */
   private static class MongoFilterRule extends MongoConverterRule {
+    private static final MongoFilterRule INSTANCE = new MongoFilterRule();
+
     private MongoFilterRule() {
-      super(
-          FilterRel.class,
-          Convention.NONE,
-          MongoRel.CONVENTION,
+      super(FilterRel.class, Convention.NONE, MongoRel.CONVENTION,
           "MongoFilterRule");
     }
 
@@ -224,6 +222,45 @@ public class MongoRules {
           traitSet,
           convert(filter.getChild(), traitSet),
           filter.getCondition());
+    }
+  }
+
+  /**
+   * Rule to convert a {@link org.eigenbase.rel.ProjectRel} to a
+   * {@link MongoProjectRel}.
+   */
+  private static class MongoProjectRule extends MongoConverterRule {
+    private static final MongoProjectRule INSTANCE = new MongoProjectRule();
+
+    private MongoProjectRule() {
+      super(ProjectRel.class, Convention.NONE, MongoRel.CONVENTION,
+          "MongoProjectRule");
+    }
+
+    public RelNode convert(RelNode rel) {
+      final ProjectRel project = (ProjectRel) rel;
+      final RelTraitSet traitSet = project.getTraitSet().replace(out);
+
+      final RelOptCluster cluster = project.getCluster();
+      final RexBuilder rexBuilder = cluster.getRexBuilder();
+      final RelDataTypeFactory typeFactory = cluster.getTypeFactory();
+      final ItemFinder itemFinder = new ItemFinder(typeFactory);
+      final List<RexNode> newProjects = new ArrayList<RexNode>();
+      for (RexNode rex : project.getProjects()) {
+        final RexNode rex2 = rex.accept(itemFinder);
+        final RexNode rex3 =
+            rexBuilder.ensureType(rex.getType(), rex2, true);
+        newProjects.add(rex3);
+      }
+
+      final String findString = Util.toString(itemFinder.items, "{", ", ", "}");
+      final String aggregateString = "{$project: " + findString + "}";
+      final Pair<String, String> op = Pair.of(findString, aggregateString);
+      final RelDataType rowType = itemFinder.builder.build();
+
+      return new MongoProjectRel(cluster, traitSet,
+          convert(project.getChild(), traitSet), newProjects, op,
+          project.getRowType(), ProjectRel.Flags.BOXED);
     }
   }
 
