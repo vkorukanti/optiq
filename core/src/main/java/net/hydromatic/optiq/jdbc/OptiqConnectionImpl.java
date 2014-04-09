@@ -46,7 +46,7 @@ import java.util.*;
  *
  * <p>Abstract to allow newer versions of JDBC to add methods.</p>
  */
-abstract class OptiqConnectionImpl
+public abstract class OptiqConnectionImpl
     extends AvaticaConnection
     implements OptiqConnection, QueryProvider {
   public final JavaTypeFactory typeFactory;
@@ -241,8 +241,8 @@ abstract class OptiqConnectionImpl
   }
 
   /** Schema that has no parents. */
-  private static class RootSchema extends AbstractSchema {
-    RootSchema() {
+  public static class RootSchema extends AbstractSchema {
+    public RootSchema() {
       super();
     }
 

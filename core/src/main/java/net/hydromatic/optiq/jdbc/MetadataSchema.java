@@ -31,7 +31,7 @@ import java.util.Map;
 import static net.hydromatic.optiq.jdbc.MetaImpl.*;
 
 /** Schema that contains metadata tables such as "TABLES" and "COLUMNS". */
-class MetadataSchema extends AbstractSchema {
+public class MetadataSchema extends AbstractSchema {
   private static final Map<String, Table> TABLE_MAP =
       ImmutableMap.<String, Table>of(
           "COLUMNS",

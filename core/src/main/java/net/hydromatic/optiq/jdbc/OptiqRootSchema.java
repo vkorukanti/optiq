@@ -24,7 +24,7 @@ import net.hydromatic.optiq.Schema;
  */
 public class OptiqRootSchema extends OptiqSchema {
   /** Creates a root schema. */
-  OptiqRootSchema(Schema schema) {
+  public OptiqRootSchema(Schema schema) {
     super(null, schema, "");
   }
 }

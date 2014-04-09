@@ -17,12 +17,12 @@
 */
 package net.hydromatic.optiq.tools;
 
-import net.hydromatic.linq4j.function.Function1;
-
-import net.hydromatic.optiq.Schema;
 import net.hydromatic.optiq.SchemaPlus;
 import net.hydromatic.optiq.config.Lex;
+import net.hydromatic.optiq.jdbc.MetadataSchema;
 import net.hydromatic.optiq.jdbc.OptiqConnection;
+import net.hydromatic.optiq.jdbc.OptiqConnectionImpl.RootSchema;
+import net.hydromatic.optiq.jdbc.OptiqRootSchema;
 import net.hydromatic.optiq.prepare.OptiqPrepareImpl;
 import net.hydromatic.optiq.prepare.PlannerImpl;
 import net.hydromatic.optiq.server.OptiqServerStatement;
@@ -71,9 +71,9 @@ public class Frameworks {
    * @return The Planner object.
    */
   public static Planner getPlanner(Lex lex,
-      Function1<SchemaPlus, Schema> schemaFactory,
+      SchemaPlus rootSchema, SchemaPlus defaultSchema,
       SqlOperatorTable operatorTable, RuleSet... ruleSets) {
-    return getPlanner(lex, SqlParserImpl.FACTORY, schemaFactory,
+    return getPlanner(lex, SqlParserImpl.FACTORY, rootSchema, defaultSchema,
         operatorTable, null, StandardConvertletTable.INSTANCE, ruleSets);
   }
 
@@ -111,14 +111,14 @@ public class Frameworks {
    */
   public static Planner getPlanner(Lex lex,
       SqlParserImplFactory parserFactory,
-      Function1<SchemaPlus, Schema> schemaFactory,
+      SchemaPlus rootSchema, SchemaPlus defaultSchema,
       SqlOperatorTable operatorTable,
       List<RelTraitDef> traitDefs,
       SqlRexConvertletTable convertletTable,
       RuleSet... ruleSets) {
 
-    return new PlannerImpl(lex, parserFactory, schemaFactory, operatorTable,
-        ImmutableList.copyOf(ruleSets),
+    return new PlannerImpl(lex, parserFactory, rootSchema, defaultSchema,
+        operatorTable, ImmutableList.copyOf(ruleSets),
         traitDefs == null ? null : ImmutableList.copyOf(traitDefs),
         convertletTable);
   }
@@ -180,6 +180,16 @@ public class Frameworks {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  /**
+   *
+   * @return
+   */
+  public static SchemaPlus createRootSchema() {
+    OptiqRootSchema rootSchema = new OptiqRootSchema(new RootSchema());
+    rootSchema.add("metadata", MetadataSchema.INSTANCE);
+    return rootSchema.plus();
   }
 }
 
