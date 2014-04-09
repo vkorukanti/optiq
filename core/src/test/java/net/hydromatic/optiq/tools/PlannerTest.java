@@ -17,9 +17,6 @@
 */
 package net.hydromatic.optiq.tools;
 
-import net.hydromatic.linq4j.function.Function1;
-
-import net.hydromatic.optiq.Schema;
 import net.hydromatic.optiq.SchemaPlus;
 import net.hydromatic.optiq.config.Lex;
 import net.hydromatic.optiq.impl.java.ReflectiveSchema;
@@ -63,12 +60,14 @@ import static org.junit.Assert.*;
  * Unit tests for {@link Planner}.
  */
 public class PlannerTest {
-  public static final Function1<SchemaPlus, Schema> HR_FACTORY =
-      new Function1<SchemaPlus, Schema>() {
-        public Schema apply(SchemaPlus parentSchema) {
-          return new ReflectiveSchema("hr", new JdbcTest.HrSchema());
-        }
-      };
+  public static final SchemaPlus ROOT_SCHEMA;
+  public static final SchemaPlus DEFAULT_SCHEMA;
+
+  static {
+    ROOT_SCHEMA = Frameworks.createRootSchema();
+    DEFAULT_SCHEMA = ROOT_SCHEMA.add("hr",
+        new ReflectiveSchema("hr", new JdbcTest.HrSchema()));
+  }
 
   @Test public void testParseAndConvert() throws Exception {
     Planner planner = getPlanner(null);
@@ -132,7 +131,8 @@ public class PlannerTest {
             new ListSqlOperatorTable(
                 ImmutableList.<SqlOperator>of(new MyCountAggFunction()))));
     Planner planner = Frameworks.getPlanner(Lex.ORACLE, SqlParserImpl.FACTORY,
-        HR_FACTORY, opTab, null, StandardConvertletTable.INSTANCE);
+        ROOT_SCHEMA, DEFAULT_SCHEMA, opTab, null,
+        StandardConvertletTable.INSTANCE);
     SqlNode parse =
         planner.parse("select \"deptno\", my_count(\"empid\") from \"emps\"\n"
             + "group by \"deptno\"");
@@ -163,7 +163,7 @@ public class PlannerTest {
 
   private Planner getPlanner(List<RelTraitDef> traitDefs, RuleSet... ruleSets) {
     return Frameworks.getPlanner(Lex.ORACLE, SqlParserImpl.FACTORY,
-        HR_FACTORY, SqlStdOperatorTable.instance(), traitDefs,
+        ROOT_SCHEMA, DEFAULT_SCHEMA, SqlStdOperatorTable.instance(), traitDefs,
         StandardConvertletTable.INSTANCE, ruleSets);
   }
 

@@ -17,9 +17,6 @@
 */
 package net.hydromatic.optiq.prepare;
 
-import net.hydromatic.linq4j.function.Function1;
-
-import net.hydromatic.optiq.Schema;
 import net.hydromatic.optiq.SchemaPlus;
 import net.hydromatic.optiq.config.Lex;
 import net.hydromatic.optiq.impl.java.JavaTypeFactory;
@@ -39,12 +36,8 @@ import org.eigenbase.sql2rel.SqlToRelConverter;
 
 import com.google.common.collect.ImmutableList;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
 /** Implementation of {@link net.hydromatic.optiq.tools.Planner}. */
 public class PlannerImpl implements Planner {
-  private final Function1<SchemaPlus, Schema> schemaFactory;
   private final SqlOperatorTable operatorTable;
   private final ImmutableList<RuleSet> ruleSets;
 
@@ -80,11 +73,12 @@ public class PlannerImpl implements Planner {
   /** Creates a planner. Not a public API; call
    * {@link net.hydromatic.optiq.tools.Frameworks#getPlanner} instead. */
   public PlannerImpl(Lex lex, SqlParserImplFactory parserFactory,
-      Function1<SchemaPlus, Schema> schemaFactory,
+      SchemaPlus rootSchema, SchemaPlus defaultSchema,
       SqlOperatorTable operatorTable, ImmutableList<RuleSet> ruleSets,
       ImmutableList<RelTraitDef> traitDefs,
       SqlRexConvertletTable convertletTable) {
-    this.schemaFactory = schemaFactory;
+    this.rootSchema = rootSchema;
+    this.defaultSchema = defaultSchema;
     this.operatorTable = operatorTable;
     this.ruleSets = ruleSets;
     this.lex = lex;
@@ -113,8 +107,6 @@ public class PlannerImpl implements Planner {
 
   public void close() {
     open = false;
-    rootSchema = null;
-    defaultSchema = null;
     typeFactory = null;
     state = State.STATE_0_CLOSED;
   }
@@ -135,30 +127,9 @@ public class PlannerImpl implements Planner {
         new Frameworks.PlannerAction<Void>() {
           public Void apply(RelOptCluster cluster, RelOptSchema relOptSchema,
               SchemaPlus rootSchema) {
-            PlannerImpl.this.rootSchema = rootSchema;
-            final Schema schema =
-                schemaFactory.apply(PlannerImpl.this.rootSchema);
-            defaultSchema = rootSchema.add(getName(schema), schema);
             typeFactory = (JavaTypeFactory) cluster.getTypeFactory();
             planner = cluster.getPlanner();
             return null;
-          }
-
-          /** Temporary method while we are phasing out schema names. Once
-           * <a href="https://github.com/julianhyde/optiq/issues/214">optiq-214</a>
-           * is fixed, the client will pass us a {@link SchemaPlus}, and that
-           * has a name. */
-          private String getName(Schema schema) {
-            try {
-              final Method method = schema.getClass().getMethod("getName");
-              return (String) method.invoke(schema);
-            } catch (NoSuchMethodException e) {
-              return "DUMMY";
-            } catch (InvocationTargetException e) {
-              return "DUMMY";
-            } catch (IllegalAccessException e) {
-              return "DUMMY";
-            }
           }
         });
     state = State.STATE_2_READY;
