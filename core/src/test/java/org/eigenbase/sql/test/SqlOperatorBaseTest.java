@@ -4807,6 +4807,7 @@ public abstract class SqlOperatorBaseTest {
    * precision.
    * </ul>
    */
+  @Ignore
   @Test public void testLiteralBeyondLimit() {
     tester.setFor(SqlStdOperatorTable.CAST);
     for (BasicSqlType type : SqlLimitsTest.getTypes()) {
@@ -4818,7 +4819,7 @@ public abstract class SqlOperatorBaseTest {
 
         if ((type.getSqlTypeName() == SqlTypeName.BIGINT)
             || ((type.getSqlTypeName() == SqlTypeName.DECIMAL)
-            && (type.getPrecision() == 19))) {
+            && (type.getPrecision() == 38))) {
           // Values which are too large to be literals fail at
           // validate time.
           tester.checkFails(
