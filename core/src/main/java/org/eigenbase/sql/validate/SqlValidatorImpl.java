@@ -1823,6 +1823,9 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     case WITH:
     case UNNEST:
     case OTHER_FUNCTION:
+      if (alias == null) {
+        alias = deriveAlias(node, nextGeneratedId++);
+      }
       registerQuery(
           parentScope,
           usingScope,
