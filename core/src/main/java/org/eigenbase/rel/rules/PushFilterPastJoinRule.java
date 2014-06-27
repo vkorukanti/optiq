@@ -34,23 +34,23 @@ public abstract class PushFilterPastJoinRule extends RelOptRule {
       new PushFilterPastJoinRule(
           operand(
               FilterRel.class,
-              operand(JoinRel.class, any())),
+              operand(JoinRelBase.class, any())),
           "PushFilterPastJoinRule:filter") {
         @Override
         public void onMatch(RelOptRuleCall call) {
           FilterRel filter = call.rel(0);
-          JoinRel join = call.rel(1);
+          JoinRelBase join = call.rel(1);
           perform(call, filter, join);
         }
       };
 
   public static final PushFilterPastJoinRule JOIN =
       new PushFilterPastJoinRule(
-          operand(JoinRel.class, any()),
+          operand(JoinRelBase.class, any()),
           "PushFilterPastJoinRule:no-filter") {
         @Override
         public void onMatch(RelOptRuleCall call) {
-          JoinRel join = call.rel(0);
+          JoinRelBase join = call.rel(0);
           perform(call, null, join);
         }
       };
