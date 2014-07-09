@@ -26,6 +26,7 @@ import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.core.RelFactories;
+import org.apache.calcite.rel.logical.LogicalJoin;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
@@ -247,7 +248,14 @@ public abstract class FilterJoinRule extends RelOptRule {
     newJoinRel = RelOptUtil.createCastRel(newJoinRel, join.getRowType(),
         false, projectFactory);
 
-    // create a LogicalFilter on top of the join if needed
+    if (newJoinRel instanceof LogicalJoin) {
+      newJoinRel = RelOptUtil.pushExpInEqualJoinCondIntoProj(join.getCluster(),
+          ((Join) newJoinRel).getCondition(),
+          ((Join) newJoinRel).getJoinType(),
+          leftRel, rightRel);
+    }
+
+    // create a FilterRel on top of the join if needed
     RelNode newRel =
         RelOptUtil.createFilter(newJoinRel,
             RexUtil.fixUp(rexBuilder, aboveFilters, newJoinRel.getRowType()),
