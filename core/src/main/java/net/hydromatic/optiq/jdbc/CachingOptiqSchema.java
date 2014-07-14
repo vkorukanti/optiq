@@ -17,13 +17,13 @@
 */
 package net.hydromatic.optiq.jdbc;
 
+import net.hydromatic.linq4j.Linq4j;
+
 import net.hydromatic.optiq.*;
 import net.hydromatic.optiq.Schema;
 import net.hydromatic.optiq.SchemaPlus;
 import net.hydromatic.optiq.Table;
 import net.hydromatic.optiq.TableMacro;
-
-import net.hydromatic.linq4j.Linq4j;
 
 import org.eigenbase.util.Pair;
 
