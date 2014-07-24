@@ -332,18 +332,35 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
           && identifier.names.get(0).equals("*")) {
         SqlParserPos starPosition = identifier.getParserPosition();
         for (Pair<String, SqlValidatorNamespace> p : scope.children) {
-          final SqlNode from = p.right.getNode();
-          final SqlValidatorNamespace fromNs = getNamespace(from, scope);
-          assert fromNs != null;
-          final RelDataType rowType = fromNs.getRowType();
-          for (RelDataTypeField field : rowType.getFieldList()) {
-            String columnName = field.getName();
+          // Expand the list of columns.
+          if (p.right.getRowType() instanceof RelRecordType) {
+            final SqlNode from = p.right.getNode();
+            final SqlValidatorNamespace fromNs = getNamespace(from, scope);
+            assert fromNs != null;
+            final RelDataType rowType = fromNs.getRowType();
+            for (RelDataTypeField field : rowType.getFieldList()) {
+              String columnName = field.getName();
 
-            // TODO: do real implicit collation here
+              // TODO: do real implicit collation here
+              final SqlNode exp =
+                  new SqlIdentifier(
+                      ImmutableList.of(p.left, columnName),
+                      starPosition);
+              addToSelectList(
+                  selectItems,
+                  aliases,
+                  types,
+                  exp,
+                  scope,
+                  includeSystemVars);
+            }
+          } else {
+            // Do not expand, if it's DrillTable.
             final SqlNode exp =
                 new SqlIdentifier(
-                    ImmutableList.of(p.left, columnName),
+                    ImmutableList.of(p.left, "*"),
                     starPosition);
+
             addToSelectList(
                 selectItems,
                 aliases,
@@ -368,13 +385,27 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
         final SqlValidatorNamespace fromNs = getNamespace(from);
         assert fromNs != null;
         final RelDataType rowType = fromNs.getRowType();
-        for (RelDataTypeField field : rowType.getFieldList()) {
-          String columnName = field.getName();
+        if (rowType instanceof RelRecordType) {
+          for (RelDataTypeField field : rowType.getFieldList()) {
+            String columnName = field.getName();
 
-          // TODO: do real implicit collation here
+            // TODO: do real implicit collation here
+            final SqlIdentifier exp =
+                new SqlIdentifier(
+                    ImmutableList.of(tableName, columnName),
+                    starPosition);
+            addToSelectList(
+                selectItems,
+                aliases,
+                types,
+                exp,
+                scope,
+                includeSystemVars);
+          }
+        } else {
           final SqlIdentifier exp =
               new SqlIdentifier(
-                  ImmutableList.of(tableName, columnName),
+                  ImmutableList.of(tableName, "*"),
                   starPosition);
           addToSelectList(
               selectItems,
