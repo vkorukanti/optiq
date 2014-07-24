@@ -851,6 +851,7 @@ public class JdbcTest {
   /**
    * Make sure that the properties look sane.
    */
+  @Ignore
   @Test public void testVersion() throws ClassNotFoundException, SQLException {
     Connection connection = DriverManager.getConnection("jdbc:calcite:");
     CalciteConnection calciteConnection =
