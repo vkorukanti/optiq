@@ -37,6 +37,8 @@ import net.hydromatic.linq4j.Ord;
 import net.hydromatic.optiq.util.BitSets;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 
 /**
  * <code>RelOptUtil</code> defines static utility methods for use in optimizing
