@@ -146,40 +146,12 @@ public abstract class DelegatingScope implements SqlValidatorScope {
 
       // todo: do implicit collation here
       return resolveSqlIdentifier(tableName, columnName, identifier, false);
-//      final SqlParserPos pos = identifier.getParserPosition();
-//      SqlIdentifier expanded =
-//          new SqlIdentifier(
-//              ImmutableList.of(tableName, columnName),
-//              null,
-//              pos,
-//              ImmutableList.of(SqlParserPos.ZERO, pos));
-//      validator.setOriginal(expanded, identifier);
-//      return expanded;
 
     case 2:
       tableName = identifier.names.get(0);
       columnName = identifier.names.get(1);
 
       return resolveSqlIdentifier(tableName, columnName, identifier, true);
-//      final SqlValidatorNamespace fromNs = resolve(tableName, null, null);
-//      if (fromNs == null) {
-//        throw validator.newValidationError(identifier.getComponent(0),
-//            RESOURCE.tableNameNotFound(tableName));
-//      }
-//      final RelDataType fromRowType = fromNs.getRowType();
-//      final RelDataTypeField field =
-//          validator.catalogReader.field(fromRowType, columnName);
-//      if (field != null) {
-//        if (field.getName().equals("*") && !columnName.equals("*")) {
-//          return new SqlIdentifier(
-//              ImmutableList.of(tableName, field.getName()),
-//              identifier.getParserPosition());
-//        }
-//        return identifier; // it was fine already
-//      } else {
-//        throw validator.newValidationError(identifier.getComponent(1),
-//            RESOURCE.columnNotFoundInTable(columnName, tableName));
-//      }
 
     default:
       // NOTE jvs 26-May-2004:  lengths greater than 2 are possible
