@@ -762,7 +762,10 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
     check("select empno from emp where deptno in (10, 20)", "${plan}");
   }
 
-  @Test public void testInValueListLong() {
+
+  @Test
+  @Ignore("Will be enabled by DRILL-1892 (Values operator in Drill")
+  public void testInValueListLong() {
     // Go over the default threshold of 20 to force a subquery.
     check("select empno from emp where deptno in"
             + " (10, 20, 30, 40, 50, 60, 70, 80, 90, 100"
