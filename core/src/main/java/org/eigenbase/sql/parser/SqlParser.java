@@ -198,6 +198,7 @@ public class SqlParser {
     Casing getUnquotedCasing();
     Quoting getQuoting();
     Lex getLex();
+    boolean caseSensitive();
   }
 
   /**
@@ -231,6 +232,8 @@ public class SqlParser {
     public Lex getLex() {
       return this.lex;
     }
+
+    public boolean caseSensitive() { return this.lex.caseSensitive; }
   }
 
 }
