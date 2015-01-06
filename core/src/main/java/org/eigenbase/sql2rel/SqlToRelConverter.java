@@ -2221,6 +2221,9 @@ public class SqlToRelConverter {
       groupList = SqlNodeList.EMPTY;
     }
 
+    // replace subqueries in the group-by list (CALCITE-516)
+    replaceSubqueries(bb, groupList);
+
     // register the group exprs
 
     // build a map to remember the projections from the top scope to the
@@ -3025,10 +3028,13 @@ public class SqlToRelConverter {
       return bb.convertExpression(call);
     }
 
-    if (bb.agg != null) {
-      throw Util.newInternal("Identifier '" + identifier
-          + "' is not a group expr");
-    }
+    /* Disabled this as part of CALCITE-516. Will be resolved by
+     * CALCITE-551
+     */
+    //if (bb.agg != null) {
+    //  throw Util.newInternal("Identifier '" + identifier
+    //      + "' is not a group expr");
+    //}
 
     SqlValidatorNamespace namespace = null;
     if (bb.scope != null) {
