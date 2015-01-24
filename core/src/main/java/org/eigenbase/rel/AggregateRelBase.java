@@ -33,6 +33,7 @@ import net.hydromatic.linq4j.Ord;
 import net.hydromatic.optiq.util.BitSets;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 /**
  * <code>AggregateRelBase</code> is an abstract base class for implementations
@@ -169,7 +170,7 @@ public abstract class AggregateRelBase extends SingleRel {
   }
 
   protected RelDataType deriveRowType() {
-    return getCluster().getTypeFactory().createStructType(
+    RelDataType rowType = getCluster().getTypeFactory().createStructType(
         CompositeList.of(
             // fields derived from grouping columns
             new AbstractList<RelDataTypeField>() {
@@ -202,6 +203,18 @@ public abstract class AggregateRelBase extends SingleRel {
                     name, index, aggCall.type);
               }
             }));
+
+    // ensure rowtype of aggregate has unique fields
+    List<String> fieldNames =
+      SqlValidatorUtil.uniquify(rowType.getFieldNames(),
+              SqlValidatorUtil.F_SUGGESTER);
+    List<RelDataType> fieldTypes = Lists.newArrayList();
+    for (RelDataTypeField f : rowType.getFieldList()) {
+      fieldTypes.add(f.getType());
+    }
+    rowType = getCluster().getTypeFactory().createStructType(
+        fieldTypes, fieldNames);
+    return rowType;
   }
 
   /**
