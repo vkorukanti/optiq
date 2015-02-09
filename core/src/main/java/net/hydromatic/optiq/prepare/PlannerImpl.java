@@ -169,6 +169,7 @@ public class PlannerImpl implements Planner {
   public SqlNode validate(SqlNode sqlNode) throws ValidationException {
     ensure(State.STATE_3_PARSED);
     this.validator = createSqlValidator(createCatalogReader());
+    this.validator.setIdentifierExpansion(true);
     try {
       validatedSqlNode = validator.validate(sqlNode);
     } catch (RuntimeException e) {
@@ -207,6 +208,7 @@ public class PlannerImpl implements Planner {
       final OptiqCatalogReader catalogReader =
           createCatalogReader().withSchemaPath(schemaPath);
       SqlValidator validator = createSqlValidator(catalogReader);
+      validator.setIdentifierExpansion(true);
       SqlNode validatedSqlNode = validator.validate(sqlNode);
 
       SqlToRelConverter sqlToRelConverter =
