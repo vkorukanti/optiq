@@ -22,6 +22,7 @@ import net.hydromatic.optiq.config.Lex;
 
 import org.eigenbase.relopt.Context;
 import org.eigenbase.relopt.RelOptCostFactory;
+import org.eigenbase.relopt.RelOptPlanner;
 import org.eigenbase.relopt.RelTraitDef;
 import org.eigenbase.sql.SqlOperatorTable;
 import org.eigenbase.sql.parser.SqlParser;
@@ -59,6 +60,10 @@ public interface FrameworkConfig {
    */
   SchemaPlus getDefaultSchema();
 
+  /**
+   * Get the executor used to evaluate constant expressions.
+   */
+  RelOptPlanner.Executor getExecutor();
 
   /**
    * List of of one or more programs used during the course of

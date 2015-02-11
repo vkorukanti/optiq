@@ -23,6 +23,7 @@ import net.hydromatic.optiq.config.Lex;
 
 import org.eigenbase.relopt.Context;
 import org.eigenbase.relopt.RelOptCostFactory;
+import org.eigenbase.relopt.RelOptPlanner;
 import org.eigenbase.relopt.RelTraitDef;
 import org.eigenbase.sql.SqlOperatorTable;
 import org.eigenbase.sql.parser.SqlParser;
@@ -46,6 +47,7 @@ class StdFrameworkConfig implements FrameworkConfig {
   private final SchemaPlus defaultSchema;
   private final RelOptCostFactory costFactory;
   private final SqlParserImplFactory parserFactory;
+  private final RelOptPlanner.Executor executor;
 
 
   public StdFrameworkConfig(Context context, //
@@ -56,7 +58,8 @@ class StdFrameworkConfig implements FrameworkConfig {
       SqlParser.ParserConfig parserConfig, //
       SchemaPlus defaultSchema, //
       RelOptCostFactory costFactory, //
-      SqlParserImplFactory parserFactory) {
+      SqlParserImplFactory parserFactory,
+      RelOptPlanner.Executor executor) {
     super();
     this.context = context;
     this.convertletTable = convertletTable;
@@ -67,6 +70,7 @@ class StdFrameworkConfig implements FrameworkConfig {
     this.defaultSchema = defaultSchema;
     this.costFactory = costFactory;
     this.parserFactory = parserFactory;
+    this.executor = executor;
   }
 
   public Lex getLex() {
@@ -83,6 +87,10 @@ class StdFrameworkConfig implements FrameworkConfig {
 
   public SchemaPlus getDefaultSchema() {
     return defaultSchema;
+  }
+
+  public RelOptPlanner.Executor getExecutor() {
+    return executor;
   }
 
   public ImmutableList<Program> getPrograms() {

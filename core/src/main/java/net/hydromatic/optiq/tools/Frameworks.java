@@ -28,6 +28,7 @@ import net.hydromatic.optiq.server.OptiqServerStatement;
 import org.eigenbase.relopt.Context;
 import org.eigenbase.relopt.RelOptCluster;
 import org.eigenbase.relopt.RelOptCostFactory;
+import org.eigenbase.relopt.RelOptPlanner;
 import org.eigenbase.relopt.RelOptSchema;
 import org.eigenbase.relopt.RelTraitDef;
 import org.eigenbase.sql.SqlOperatorTable;
@@ -173,6 +174,7 @@ public class Frameworks {
             SqlParser.DEFAULT_IDENTIFIER_MAX_LENGTH);
 
     private SchemaPlus defaultSchema;
+    private RelOptPlanner.Executor executor;
     private RelOptCostFactory costFactory;
     private SqlParserImplFactory parserFactory = SqlParserImpl.FACTORY;
 
@@ -181,7 +183,7 @@ public class Frameworks {
     public FrameworkConfig build() {
       return new StdFrameworkConfig(context, convertletTable, operatorTable,
           programs, traitDefs, parserConfig, defaultSchema, costFactory, //
-          parserFactory);
+          parserFactory, executor);
     }
 
     public ConfigBuilder context(Context c) {
@@ -189,6 +191,12 @@ public class Frameworks {
       this.context = c;
       return this;
     };
+
+    public ConfigBuilder executor(RelOptPlanner.Executor executor) {
+      Preconditions.checkNotNull(executor);
+      this.executor = executor;
+      return this;
+    }
 
     public ConfigBuilder convertletTable(SqlRexConvertletTable table) {
       Preconditions.checkNotNull(table);
