@@ -165,10 +165,7 @@ public class PlannerImpl implements Planner {
 
   public SqlNode validate(SqlNode sqlNode) throws ValidationException {
     ensure(State.STATE_3_PARSED);
-    this.validator =
-        new CalciteSqlValidator(
-            operatorTable, createCatalogReader(), typeFactory);
-    this.validator.setIdentifierExpansion(true);
+    this.validator = createSqlValidator(createCatalogReader());
     try {
       validatedSqlNode = validator.validate(sqlNode);
     } catch (RuntimeException e) {
@@ -182,9 +179,7 @@ public class PlannerImpl implements Planner {
     ensure(State.STATE_4_VALIDATED);
     assert validatedSqlNode != null;
     final SqlToRelConverter sqlToRelConverter =
-        new SqlToRelConverter(
-            new ViewExpanderImpl(), validator, createCatalogReader(), planner,
-            createRexBuilder(), convertletTable);
+        getSqlToRelConverter(validator, createCatalogReader());
     sqlToRelConverter.setTrimUnusedFields(false);
     sqlToRelConverter.enableTableAccessConversion(false);
     rel = sqlToRelConverter.convertQuery(validatedSqlNode, false, true);
@@ -209,17 +204,19 @@ public class PlannerImpl implements Planner {
 
       final CalciteCatalogReader catalogReader =
           createCatalogReader().withSchemaPath(schemaPath);
-      final SqlValidator validator = new CalciteSqlValidator(operatorTable,
-          catalogReader, typeFactory);
-      validator.setIdentifierExpansion(true);
+
+      final SqlValidator validator = createSqlValidator(catalogReader);
       final SqlNode validatedSqlNode = validator.validate(sqlNode);
 
-      final SqlToRelConverter sqlToRelConverter = new SqlToRelConverter(
-          null, validator, catalogReader, planner,
-          createRexBuilder(), convertletTable);
-      sqlToRelConverter.setTrimUnusedFields(false);
+      final SqlToRelConverter sqlToRelConverter =
+          getSqlToRelConverter(validator, catalogReader);
 
-      return sqlToRelConverter.convertQuery(validatedSqlNode, true, false);
+      RelNode relNode = sqlToRelConverter.convertQuery(
+          validatedSqlNode, true, false);
+      relNode = sqlToRelConverter.flattenTypes(relNode, true);
+      relNode = sqlToRelConverter.decorrelate(validatedSqlNode, relNode);
+
+      return relNode;
     }
   }
 
@@ -232,6 +229,28 @@ public class PlannerImpl implements Planner {
         CalciteSchema.from(defaultSchema).path(null),
         typeFactory);
   }
+
+  private CalciteSqlValidator createSqlValidator(
+      CalciteCatalogReader catalogReader) {
+    final CalciteSqlValidator validator =
+        new CalciteSqlValidator(operatorTable, catalogReader, typeFactory);
+    validator.setIdentifierExpansion(true);
+    return validator;
+  }
+
+  private SqlToRelConverter getSqlToRelConverter(
+      SqlValidator validator,
+      CalciteCatalogReader catalogReader) {
+    SqlToRelConverter sqlToRelConverter = new SqlToRelConverter(
+        new ViewExpanderImpl(), validator, catalogReader, planner,
+        createRexBuilder(), convertletTable);
+
+    sqlToRelConverter.setTrimUnusedFields(false);
+    sqlToRelConverter.enableTableAccessConversion(false);
+
+    return sqlToRelConverter;
+  }
+
 
   private static SchemaPlus rootSchema(SchemaPlus schema) {
     for (;;) {
