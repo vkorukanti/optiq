@@ -79,7 +79,7 @@ public class OrderByScope extends DelegatingScope {
       // If rowType has "*" column, above method call could return field
       // as "*". Use super.fullyQualify() for such case.
       if (field != null && ! field.getName().startsWith("*")) {
-        return identifier;
+        return SqlQualified.create(this, 1, selectNs, identifier);
       }
     }
     return super.fullyQualify(identifier);
