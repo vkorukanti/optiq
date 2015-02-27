@@ -4432,6 +4432,7 @@ public class JdbcTest {
     checkRun("sql/agg.oq");
   }
 
+  @Ignore ("CALCITE-212.  Push down join condition expression into project. ")
   @Test public void testRunJoin() throws Exception {
     checkRun("sql/join.oq");
   }
