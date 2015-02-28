@@ -1066,6 +1066,7 @@ public class SqlToRelConverterTest extends SqlToRelTestBase {
   /**
    * Test group-by CASE expression involving a non-query IN
    */
+  @Ignore
   @Test public void testGroupByCaseSubquery() {
     sql("SELECT CASE WHEN emp.empno IN (3) THEN 0 ELSE 1 END\n"
         + "FROM emp\n"
