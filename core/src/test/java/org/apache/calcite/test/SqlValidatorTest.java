@@ -3817,10 +3817,10 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
     winSql("select *\n"
         + " from emp\n"
         + " join dept on emp.deptno = dept.deptno\n"
-        + " and ^sum(sal) over (partition by deptno\n"
+        + " and ^sum(sal) over (partition by emp.deptno\n"
         + "    order by empno\n"
         + "    rows 3 preceding)^ = dept.deptno + 40\n"
-        + "order by deptno")
+        + "order by emp.deptno")
         .fails("Windowed aggregate expression is illegal in ON clause");
 
     // rule 3, a)
