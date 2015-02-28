@@ -378,17 +378,17 @@ public abstract class ReturnTypes {
    * of type ANY, then the result is of type ANY.
    */
   public static final SqlReturnTypeInference ARG_IS_ANY =
-      new SqlReturnTypeInference() {
-        public RelDataType inferReturnType(
-            SqlOperatorBinding opBinding) {
-          for (RelDataType type : opBinding.collectOperandTypes()) {
-            if (SqlTypeUtil.isAny(type)) {
-                return type;
-            }
+    new SqlReturnTypeInference() {
+      public RelDataType inferReturnType(
+          SqlOperatorBinding opBinding) {
+        for (RelDataType type : opBinding.collectOperandTypes()) {
+          if (SqlTypeUtil.isAny(type)) {
+            return type;
           }
-          return null;
         }
-  };
+        return null;
+      }
+    };
 
   /**
    * Type-inference strategy whereby the result type of a call is
@@ -462,7 +462,8 @@ public abstract class ReturnTypes {
    */
   public static final SqlReturnTypeInference QUOTIENT_NULLABLE =
       chain(
-          ARG_IS_ANY, DECIMAL_QUOTIENT_NULLABLE, ARG0_INTERVAL_NULLABLE, LEAST_RESTRICTIVE);
+          ARG_IS_ANY, DECIMAL_QUOTIENT_NULLABLE, ARG0_INTERVAL_NULLABLE,
+          LEAST_RESTRICTIVE);
   /**
    * Type-inference strategy whereby the result type of a call is the decimal
    * sum of two exact numeric operands where at least one of the operands is a
@@ -530,7 +531,8 @@ public abstract class ReturnTypes {
    * These rules are used for addition and subtraction.
    */
   public static final SqlReturnTypeInference NULLABLE_SUM =
-      new SqlReturnTypeInferenceChain(ARG_IS_ANY, DECIMAL_SUM_NULLABLE, LEAST_RESTRICTIVE);
+      new SqlReturnTypeInferenceChain(ARG_IS_ANY, DECIMAL_SUM_NULLABLE,
+          LEAST_RESTRICTIVE);
 
   /**
    * Type-inference strategy whereby the result type of a call is
