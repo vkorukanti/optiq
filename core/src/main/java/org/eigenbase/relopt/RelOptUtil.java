@@ -34,6 +34,7 @@ import org.eigenbase.util.mapping.Mappings;
 
 import net.hydromatic.linq4j.Ord;
 
+import net.hydromatic.optiq.SchemaPlus;
 import net.hydromatic.optiq.util.BitSets;
 
 import com.google.common.collect.ImmutableList;
@@ -2355,6 +2356,14 @@ public abstract class RelOptUtil {
       public RelNode expandView(
           RelDataType rowType,
           String queryString,
+          List<String> schemaPath) {
+        throw new UnsupportedOperationException();
+      }
+
+      public RelNode expandView(
+          RelDataType rowType,
+          String queryString,
+          SchemaPlus rootSchema,
           List<String> schemaPath) {
         throw new UnsupportedOperationException();
       }

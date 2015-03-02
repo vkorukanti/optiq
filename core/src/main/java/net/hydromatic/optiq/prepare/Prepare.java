@@ -18,6 +18,7 @@
 package net.hydromatic.optiq.prepare;
 
 import net.hydromatic.optiq.DataContext;
+import net.hydromatic.optiq.SchemaPlus;
 import net.hydromatic.optiq.impl.StarTable;
 import net.hydromatic.optiq.jdbc.OptiqPrepare;
 import net.hydromatic.optiq.jdbc.OptiqSchema;
@@ -374,6 +375,25 @@ public abstract class Prepare {
   public RelNode expandView(
       RelDataType rowType,
       String queryString,
+      List<String> schemaPath) {
+    throw new UnsupportedOperationException();
+  }
+
+
+  /**
+   * Returns a relational expression which is to be substituted for an access
+   * to a SQL view.
+   *
+   * @param rowType Row type of the view
+   * @param queryString Body of the view
+   * @param rootSchema Root schema of the schema tree
+   * @param schemaPath List of schema names wherein to find referenced tables
+   * @return Relational expression
+   */
+  public RelNode expandView(
+      RelDataType rowType,
+      String queryString,
+      SchemaPlus rootSchema,
       List<String> schemaPath) {
     throw new UnsupportedOperationException();
   }

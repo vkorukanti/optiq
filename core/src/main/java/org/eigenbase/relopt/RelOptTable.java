@@ -24,6 +24,8 @@ import org.eigenbase.reltype.*;
 
 import net.hydromatic.linq4j.expressions.Expression;
 
+import net.hydromatic.optiq.SchemaPlus;
+
 /**
  * Represents a relational dataset in a {@link RelOptSchema}. It has methods to
  * describe and implement itself.
@@ -100,6 +102,12 @@ public interface RelOptTable {
     RelNode expandView(
         RelDataType rowType,
         String queryString,
+        List<String> schemaPath);
+
+    RelNode expandView(
+        RelDataType rowType,
+        String queryString,
+        SchemaPlus rootSchema,
         List<String> schemaPath);
   }
 

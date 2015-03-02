@@ -199,6 +199,31 @@ public class PlannerImpl implements Planner {
   public class ViewExpanderImpl implements ViewExpander {
     public RelNode expandView(RelDataType rowType, String queryString,
         List<String> schemaPath) {
+      final OptiqCatalogReader catalogReader =
+          createCatalogReader().withSchemaPath(schemaPath);
+
+      return expandViewHelper(queryString, catalogReader);
+    }
+
+    public RelNode expandView(
+        RelDataType rowType,
+        String queryString,
+        SchemaPlus rootSchema,
+        List<String> schemaPath) {
+
+      // View may have different schema path than current connection.
+      final OptiqCatalogReader catalogReader = new OptiqCatalogReader(
+          OptiqSchema.from(rootSchema),
+          parserConfig.caseSensitive(),
+          OptiqSchema.from(defaultSchema).path(null),
+          typeFactory).withSchemaPath(schemaPath);
+
+      return expandViewHelper(queryString, catalogReader);
+    }
+
+    private RelNode expandViewHelper(
+        String queryString,
+        OptiqCatalogReader catalogReader) {
       SqlParser parser = SqlParser.create(parserFactory, queryString,
           parserConfig);
       SqlNode sqlNode;
@@ -208,8 +233,6 @@ public class PlannerImpl implements Planner {
         throw new RuntimeException("parse failed", e);
       }
 
-      final OptiqCatalogReader catalogReader =
-          createCatalogReader().withSchemaPath(schemaPath);
       SqlValidator validator = createSqlValidator(catalogReader);
       validator.setIdentifierExpansion(true);
       SqlNode validatedSqlNode = validator.validate(sqlNode);

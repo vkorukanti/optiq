@@ -693,6 +693,31 @@ public class OptiqPrepareImpl implements OptiqPrepare {
         RelDataType rowType,
         String queryString,
         List<String> schemaPath) {
+      // View may have different schema path than current connection.
+      final CatalogReader catalogReader =
+          this.catalogReader.withSchemaPath(schemaPath);
+      return expandViewHelper(queryString, catalogReader);
+    }
+
+    @Override public RelNode expandView(
+        RelDataType rowType,
+        String queryString,
+        SchemaPlus rootSchema,
+        List<String> schemaPath) {
+
+      // View may have different schema path than current connection.
+      final CatalogReader catalogReader = new OptiqCatalogReader(
+          OptiqSchema.from(rootSchema),
+          context.config().caseSensitive(),
+          context.getDefaultSchemaPath(),
+          context.getTypeFactory()).withSchemaPath(schemaPath);
+
+      return expandViewHelper(queryString, catalogReader);
+    }
+
+    private RelNode expandViewHelper(
+        String queryString,
+        CatalogReader catalogReader) {
       expansionDepth++;
 
       SqlParser parser = SqlParser.create(queryString);
@@ -702,9 +727,7 @@ public class OptiqPrepareImpl implements OptiqPrepare {
       } catch (SqlParseException e) {
         throw new RuntimeException("parse failed", e);
       }
-      // View may have different schema path than current connection.
-      final CatalogReader catalogReader =
-          this.catalogReader.withSchemaPath(schemaPath);
+
       SqlValidator validator = createSqlValidator(catalogReader);
       SqlNode sqlNode1 = validator.validate(sqlNode);
 

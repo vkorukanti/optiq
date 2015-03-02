@@ -41,6 +41,7 @@ import net.hydromatic.linq4j.Ord;
 import net.hydromatic.linq4j.function.Function1;
 
 import net.hydromatic.optiq.ModifiableTable;
+import net.hydromatic.optiq.SchemaPlus;
 import net.hydromatic.optiq.TranslatableTable;
 import net.hydromatic.optiq.prepare.Prepare;
 import net.hydromatic.optiq.prepare.RelOptTableImpl;
@@ -2772,6 +2773,18 @@ public class SqlToRelConverter {
           String queryString,
           List<String> schemaPath) {
         return viewExpander.expandView(rowType, queryString, schemaPath);
+      }
+
+      public RelNode expandView(
+          RelDataType rowType,
+          String queryString,
+          SchemaPlus rootSchema,
+          List<String> schemaPath) {
+        return viewExpander.expandView(
+            rowType,
+            queryString,
+            rootSchema,
+            schemaPath);
       }
     };
   }
