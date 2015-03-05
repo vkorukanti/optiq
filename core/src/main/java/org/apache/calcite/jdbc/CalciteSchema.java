@@ -23,33 +23,20 @@ import org.apache.calcite.schema.Function;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Table;
-import org.apache.calcite.schema.TableMacro;
 import org.apache.calcite.schema.impl.MaterializedViewTable;
 import org.apache.calcite.schema.impl.StarTable;
-import org.apache.calcite.util.Compatible;
 import org.apache.calcite.util.Pair;
 
 import com.google.common.base.Preconditions;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
  * Schema.
@@ -168,11 +155,12 @@ public abstract class CalciteSchema {
 
   /** Returns the list of function names in this schema, both implicit and
    * explicit, never null. */
-  public abstract NavigableSet<String> getFunctionNames() ;
+  public abstract NavigableSet<String> getFunctionNames();
 
   /** Returns tables derived from explicit and implicit functions
    * that take zero parameters. */
-  public abstract NavigableMap<String, Table> getTablesBasedOnNullaryFunctions();
+  public abstract NavigableMap<String, Table>
+  getTablesBasedOnNullaryFunctions();
 
   /** Returns a tables derived from explicit and implicit functions
    * that take zero parameters. */

@@ -17,15 +17,7 @@
 
 package org.apache.calcite.jdbc;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
+
 import org.apache.calcite.materialize.Lattice;
 import org.apache.calcite.schema.Function;
 import org.apache.calcite.schema.Schema;
@@ -34,10 +26,17 @@ import org.apache.calcite.schema.TableMacro;
 import org.apache.calcite.util.Compatible;
 import org.apache.calcite.util.Pair;
 
-import java.util.ArrayList;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
+
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
@@ -47,7 +46,7 @@ import java.util.TreeSet;
 /**
  * CachingCalciteSchema maintains a set of Navigable maps for each entity type.
  */
-public class CachingCalciteSchema extends CalciteSchema{
+public class CachingCalciteSchema extends CalciteSchema {
   /** Comparator that compares all strings differently, but if two strings are
    * equal in case-insensitive match they are right next to each other. In a
    * collection sorted on this comparator, we can find case-insensitive matches
@@ -209,7 +208,8 @@ public class CachingCalciteSchema extends CalciteSchema{
 
   /** Adds a child schema of this schema. */
   public CalciteSchema add(String name, Schema schema) {
-    final CalciteSchema calciteSchema = new CachingCalciteSchema(this, schema, name);
+    final CalciteSchema calciteSchema =
+        new CachingCalciteSchema(this, schema, name);
     subSchemaMap.put(name, calciteSchema);
     return calciteSchema;
   }
@@ -381,8 +381,9 @@ public class CachingCalciteSchema extends CalciteSchema{
 
   /** Returns a tables derived from explicit and implicit functions
    * that take zero parameters. */
-  public Pair<String, Table> getTableBasedOnNullaryFunction(String tableName,
-                                                            boolean caseSensitive) {
+  public Pair<String, Table> getTableBasedOnNullaryFunction(
+      String tableName,
+      boolean caseSensitive) {
     if (caseSensitive) {
       final FunctionEntry functionEntry = nullaryFunctionMap.get(tableName);
       if (functionEntry != null) {
@@ -505,7 +506,8 @@ public class CachingCalciteSchema extends CalciteSchema{
                 throw new RuntimeException("sub-schema " + schemaName
                     + " not found");
               }
-              return new CachingCalciteSchema(calciteSchema, subSchema, schemaName);
+              return new CachingCalciteSchema(calciteSchema,
+                  subSchema, schemaName);
             }
           });
     }

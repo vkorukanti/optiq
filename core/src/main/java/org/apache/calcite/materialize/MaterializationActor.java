@@ -16,7 +16,6 @@
  */
 package org.apache.calcite.materialize;
 
-import org.apache.calcite.jdbc.CalciteRootSchema;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.rel.type.RelDataType;
 

@@ -16,7 +16,6 @@
  */
 package org.apache.calcite.jdbc;
 
-import org.apache.calcite.schema.Schema;
 
 /**
  * Interface that marks the root schema.
