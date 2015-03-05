@@ -19,13 +19,9 @@ package org.apache.calcite.jdbc;
 import org.apache.calcite.schema.Schema;
 
 /**
- * Root schema.
+ * Interface that marks the root schema.
  */
-public class CalciteRootSchema extends CalciteSchema {
-  /** Creates a root schema. */
-  CalciteRootSchema(Schema schema) {
-    super(null, schema, "");
-  }
+public interface CalciteRootSchema {
 }
 
 // End CalciteRootSchema.java
