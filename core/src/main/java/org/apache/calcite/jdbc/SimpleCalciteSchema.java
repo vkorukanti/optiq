@@ -17,8 +17,138 @@
 
 package org.apache.calcite.jdbc;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import org.apache.calcite.schema.Function;
+import org.apache.calcite.schema.Schema;
+import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.schema.Table;
+import org.apache.calcite.util.Compatible;
+import org.apache.calcite.util.Pair;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableSet;
+import java.util.Set;
+
 /**
- * Created by jni on 3/3/15.
+ * An {@link org.apache.calcite.jdbc.CalciteSchema} implementation that
+ * maintains minimal state.
  */
-public class SimpleCalciteSchema {
+public class SimpleCalciteSchema extends CalciteSchema{
+
+  private Map<String, SimpleCalciteSchema> subSchemas = Maps.newHashMap();
+  private Map<String, TableEntry> tables = Maps.newHashMap();
+
+  public SimpleCalciteSchema(CalciteSchema parent, Schema schema, String name) {
+    super(parent, schema, name);
+  }
+
+  @Override
+  public TableEntry add(String tableName, Table table) {
+    TableEntry e = new TableEntryImpl(this, tableName, table,
+        ImmutableList.<String>of());
+    tables.put(tableName, e);
+    return e;
+  }
+
+  @Override
+  public CalciteSchema getSubSchema(String schemaName, boolean caseSensitive) {
+    Schema s = schema.getSubSchema(schemaName);
+    if (s != null) {
+      return new SimpleCalciteSchema(this, s, schemaName);
+    }
+    return subSchemas.get(schemaName);
+  }
+
+  @Override
+  public CalciteSchema add(String name, Schema schema) {
+    SimpleCalciteSchema s = new SimpleCalciteSchema(this, schema, name);
+    subSchemas.put(name, s);
+    return s;
+  }
+
+  @Override
+  public Pair<String, Table> getTable(String tableName, boolean caseSensitive) {
+    Table t = schema.getTable(tableName);
+    if (t == null) {
+      TableEntry e = tables.get(tableName);
+      if (e != null) {
+        t = e.getTable();
+      }
+    }
+    if (t != null) {
+      return new Pair<String, Table>(tableName, t);
+    }
+
+    return null;
+  }
+
+//  @SuppressWarnings("unchecked")
+//  @Override
+//  public Collection<TableEntry> getTableEntries() {
+//    return Collections.EMPTY_LIST;
+//  }
+//
+//  @Override
+//  public Set<String> getSubSchemaNames() {
+//    return Sets.union(schema.getSubSchemaNames(), subSchemas.keySet());
+//  }
+
+//  @Override
+//  public Collection<CalciteSchema> getSubSchemas() {
+//    List<CalciteSchema> schemas = Lists.newLinkedList();
+//    schemas.addAll(subSchemas.values());
+//    for (String name : schema.getSubSchemaNames()) {
+//      schemas.add(getSubSchema(name, true));
+//    }
+//    return schemas;
+//  }
+
+  @Override
+  public NavigableSet<String> getTableNames() {
+    return Compatible.INSTANCE.navigableSet(Sets.union(schema.getTableNames(), tables.keySet()));
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public Collection<Function> getFunctions(String name, boolean caseSensitive) {
+    return Collections.EMPTY_LIST;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public Set<String> getFunctionNames() {
+    return Collections.EMPTY_SET;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public Map<String, Table> getTablesBasedOnNullaryFunctions() {
+    return Collections.EMPTY_MAP;
+  }
+
+  @Override
+  public Pair<String, Table> getTableBasedOnNullaryFunction(String tableName,
+                                                            boolean caseSensitive) {
+    return null;
+  }
+
+  @Override
+  protected FunctionEntry add(String name, Function function) {
+    throw new UnsupportedOperationException();
+  }
+
+  public static SchemaPlus createRootSchema(boolean addMetadataSchema) {
+    SimpleCalciteRootSchema rootSchema =
+        new SimpleCalciteRootSchema(new CalciteConnectionImpl.RootSchema());
+    if (addMetadataSchema) {
+      rootSchema.add("metadata", MetadataSchema.INSTANCE);
+    }
+    return rootSchema.plus();
+  }
 }
