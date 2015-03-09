@@ -17,10 +17,7 @@
 
 package org.apache.calcite.jdbc;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import org.apache.calcite.materialize.Lattice;
 import org.apache.calcite.schema.Function;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
@@ -28,18 +25,23 @@ import org.apache.calcite.schema.Table;
 import org.apache.calcite.util.Compatible;
 import org.apache.calcite.util.Pair;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.NavigableSet;
-import java.util.Set;
 
 /**
  * An {@link org.apache.calcite.jdbc.CalciteSchema} implementation that
  * maintains minimal state.
  */
-public class SimpleCalciteSchema extends CalciteSchema{
+public class SimpleCalciteSchema extends CalciteSchema {
 
   private Map<String, SimpleCalciteSchema> subSchemas = Maps.newHashMap();
   private Map<String, TableEntry> tables = Maps.newHashMap();
@@ -70,6 +72,44 @@ public class SimpleCalciteSchema extends CalciteSchema{
     SimpleCalciteSchema s = new SimpleCalciteSchema(this, schema, name);
     subSchemas.put(name, s);
     return s;
+  }
+
+  @Override
+  protected void setCache(boolean cache) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public NavigableMap<String, LatticeEntry> getLatticeMap() {
+    return null;
+  }
+
+  @Override
+  protected boolean isCacheEnabled() {
+    return false;
+  }
+
+  @Override
+  protected LatticeEntry add(String name, Lattice lattice) {
+    return null;
+  }
+
+  @Override
+  public NavigableMap<String, CalciteSchema> getSubSchemaMap() {
+    return Compatible.INSTANCE.navigableMap(
+        ImmutableSortedMap.<String, CalciteSchema>copyOf(subSchemas));
+  }
+
+  @Override
+  public TableEntry add(String tableName,
+                        Table table,
+                        ImmutableList<String> sqls) {
+    return null;
+  }
+
+  @Override
+  public Pair<String, Table> getTableBySql(String sql) {
+    return null;
   }
 
   @Override
@@ -111,30 +151,38 @@ public class SimpleCalciteSchema extends CalciteSchema{
 
   @Override
   public NavigableSet<String> getTableNames() {
-    return Compatible.INSTANCE.navigableSet(Sets.union(schema.getTableNames(), tables.keySet()));
+    return Compatible.INSTANCE.navigableSet(
+        ImmutableSortedSet.copyOf(
+            Sets.union(schema.getTableNames(), tables.keySet())));
   }
 
   @SuppressWarnings("unchecked")
   @Override
+  //TODO
   public Collection<Function> getFunctions(String name, boolean caseSensitive) {
     return Collections.EMPTY_LIST;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public Set<String> getFunctionNames() {
-    return Collections.EMPTY_SET;
+  //TODO
+  public NavigableSet<String> getFunctionNames() {
+    return Compatible.INSTANCE.navigableSet(ImmutableSortedSet.<String>of());
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public Map<String, Table> getTablesBasedOnNullaryFunctions() {
-    return Collections.EMPTY_MAP;
+  //TODO
+  public NavigableMap<String, Table> getTablesBasedOnNullaryFunctions() {
+    return Compatible.INSTANCE.navigableMap(
+        ImmutableSortedMap.<String, Table>of());
   }
 
   @Override
-  public Pair<String, Table> getTableBasedOnNullaryFunction(String tableName,
-                                                            boolean caseSensitive) {
+  //TODO
+  public Pair<String, Table> getTableBasedOnNullaryFunction(
+      String tableName,
+      boolean caseSensitive) {
     return null;
   }
 

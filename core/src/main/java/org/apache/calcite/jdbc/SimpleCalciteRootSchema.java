@@ -17,8 +17,18 @@
 
 package org.apache.calcite.jdbc;
 
+import org.apache.calcite.schema.Schema;
+
 /**
- * Created by jni on 3/3/15.
+ * The base level schema (no parent) for SimpleCalciteSchema
  */
-public class SimpleCalciteRootSchema {
+
+public class SimpleCalciteRootSchema extends SimpleCalciteSchema
+    implements CalciteRootSchema {
+
+  /** Creates a root schema. */
+  SimpleCalciteRootSchema(Schema schema) {
+    super(null, schema, "");
+  }
+
 }
