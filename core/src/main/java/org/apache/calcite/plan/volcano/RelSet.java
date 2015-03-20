@@ -182,6 +182,9 @@ class RelSet {
         if (subset1 == subset) {
           continue;
         }
+        if (subset1.getConvention() == Convention.NONE) {
+          continue;
+        }
         final AbstractConverter converter =
             new AbstractConverter(
                 cluster, subset1, ConventionTraitDef.INSTANCE,
