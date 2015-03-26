@@ -43,10 +43,12 @@ import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.core.Project;
+import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.rules.FilterMergeRule;
+import org.apache.calcite.rel.rules.ProjectMergeRule;
 import org.apache.calcite.rel.rules.ProjectToWindowRule;
 import org.apache.calcite.rel.rules.SortRemoveRule;
 import org.apache.calcite.rel.type.RelDataType;
@@ -1130,6 +1132,14 @@ public class PlannerTest {
     }
   }
 
-}
 
+  @Test
+  public void testMergeProjectForceMode() throws Exception {
+    RuleSet ruleSet =
+        RuleSets.ofList(
+          new ProjectMergeRule(true, RelFactories.DEFAULT_PROJECT_FACTORY));
+    Planner planner = getPlanner(null, Programs.of(ruleSet));
+  }
+
+}
 // End PlannerTest.java
