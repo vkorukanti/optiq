@@ -576,6 +576,7 @@ public class PlannerTest {
   }
 
   /** Unit test that plans a query with a large number of joins. */
+  @Ignore
   @Test public void testPlanNWayJoin()
       throws Exception {
     // Here the times before and after enabling LoptOptimizeJoinRule.
