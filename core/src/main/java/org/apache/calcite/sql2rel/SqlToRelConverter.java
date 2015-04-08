@@ -3563,13 +3563,23 @@ public class SqlToRelConverter {
       final int origLeftInputCount = root.getRowType().getFieldCount();
       if (leftKeys != null) {
         List<RexNode> newLeftInputExpr = Lists.newArrayList();
+        // Drill-specic: We have to keep the original field name from left
+        // otherwise, if there "*" from left, the new Project
+        // will rename "*" to "f0" or something, completely ignore
+        // the semantics of "*" in a schema-less table.
+        List<String> newLeftFieldNames = Lists.newArrayList();
         for (int i = 0; i < origLeftInputCount; i++) {
           newLeftInputExpr.add(rexBuilder.makeInputRef(root, i));
+          String name = root.getRowType().getFieldNames().get(i);
+          newLeftFieldNames.add(name);
         }
 
         final List<Integer> leftJoinKeys = Lists.newArrayList();
         for (RexNode leftKey : leftKeys) {
           newLeftInputExpr.add(leftKey);
+          // Use "f" for join key field name in Project.
+          String name = "f" + (newLeftFieldNames.size() - 1);
+          newLeftFieldNames.add(name);
           leftJoinKeys.add(origLeftInputCount + leftJoinKeys.size());
         }
 
@@ -3577,7 +3587,7 @@ public class SqlToRelConverter {
             (LogicalProject) RelOptUtil.createProject(
                 root,
                 newLeftInputExpr,
-                null,
+                newLeftFieldNames, // DRILL: have to pass fieldNames.
                 true);
 
         // maintain the group by mapping in the new LogicalProject
