@@ -22,9 +22,12 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.EquiJoin;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinInfo;
+import org.apache.calcite.rel.core.Project;
+import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.logical.LogicalCalc;
 import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.logical.LogicalProject;
@@ -94,8 +97,31 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
    * {@link org.apache.calcite.rel.core.Values} (if FALSE or NULL).
    */
   public static final ReduceExpressionsRule FILTER_INSTANCE =
-      new ReduceExpressionsRule(LogicalFilter.class,
-          "ReduceExpressionsRule(Filter)") {
+    new ReduceFilterRule();
+
+  /**
+   * Rule that reduces constants inside a
+   * {@link org.apache.calcite.rel.logical.LogicalFilter}. If the
+   * condition is a constant, the filter is removed (if TRUE) or replaced with
+   * {@link org.apache.calcite.rel.core.Values} (if FALSE or NULL). This
+   * functionality can be overridden by inheriting classes to change the
+   * behavior to work with dynamic schema.
+   */
+  public static class ReduceFilterRule extends ReduceExpressionsRule {
+
+    ReduceFilterRule() {
+      super(Filter.class, "ReduceExpressionsRule[Filter]");
+    }
+
+    /**
+     * Constructor to allow an inheriting class define a unique description.
+     *
+     * @param description - Description of rule, must be unique within planner.
+     */
+    protected ReduceFilterRule(String description) {
+      super(Filter.class, description);
+    }
+
         public void onMatch(RelOptRuleCall call) {
           final LogicalFilter filter = call.rel(0);
           final List<RexNode> expList =
@@ -121,9 +147,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
                 filter.getInput());
           } else if (newConditionExp instanceof RexLiteral
               || RexUtil.isNullLiteral(newConditionExp, true)) {
-            call.transformTo(
-                LogicalValues.createEmpty(filter.getCluster(),
-                    filter.getRowType()));
+            call.transformTo(createEmptyRelOrEquivalent(filter));
           } else if (reduced) {
             call.transformTo(
                 RelOptUtil.createFilter(filter.getInput(), expList.get(0)));
@@ -143,6 +167,27 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
 
           // New plan is absolutely better than old plan.
           call.getPlanner().setImportance(filter, 0.0);
+        }
+
+        /**
+         * For static schema systems, a filter that is always false or null can be
+         * replaced by a values operator that produces no rows, as the schema
+         * information can just be taken from the input Rel. In dynamic schema
+         * environments, the filter might have an unknown input type, in these cases
+         * they must define a system specific alternative to a Values operator, such
+         * as inserting a limit 0 instead of a filter on top of the original input.
+         *
+         * The default implementation of this method is for the static schema case
+         * which converts the input into an EmptyRel.
+         *
+         * @param input rel to replace, assumes caller has already determined
+         *              equivalence to Values operation for 0 records or a
+         *              false filter.
+         * @return equivalent but less expensive replacement rel
+         */
+        protected RelNode createEmptyRelOrEquivalent(Filter input) {
+          return LogicalValues.createEmpty(input.getCluster(),
+            input.getRowType());
         }
 
         private void reduceNotNullableFilter(
@@ -176,9 +221,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
               if (alwaysTrue) {
                 call.transformTo(filter.getInput());
               } else {
-                call.transformTo(
-                    LogicalValues.createEmpty(filter.getCluster(),
-                        filter.getRowType()));
+                call.transformTo(createEmptyRelOrEquivalent(filter));
               }
             }
           }
@@ -245,8 +288,53 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       };
 
   public static final ReduceExpressionsRule CALC_INSTANCE =
-      new ReduceExpressionsRule(LogicalCalc.class,
-          "ReduceExpressionsRule(Calc)") {
+    new ReduceCalcRule();
+
+  /**
+   * Rule that reduces constants inside a {@link Calc}. If the
+   * condition is a constant, the filter is removed (if TRUE) or replaced with
+   * {@link org.apache.calcite.rel.core.Values} (if FALSE or NULL). This functionality can be overridden
+   * by inheriting classes to change the behavior to work with dynamic schema
+   * which cannot always provide a schema to an {@link org.apache.calcite.rel.core.Values}.
+   */
+  public static class ReduceCalcRule extends ReduceExpressionsRule {
+
+    ReduceCalcRule() {
+      super(Calc.class, "ReduceExpressionsRule[Calc]");
+    }
+
+    /**
+     * Constructor to allow an inheriting class define a unique description.
+     *
+     * @param description - Description of rule, must be unique within planner.
+     */
+    protected ReduceCalcRule(String description) {
+      super(Calc.class, description);
+    }
+
+    /**
+     * For static schema systems, a filter that is always false or null (or in
+     * this case, CalcRel, which combines a filter with a project) can be
+     * replaced by a values operator that produces no rows, as the schema
+     * information can just be taken from the input Rel. In dynamic schema
+     * environments, the filter might have an unknown input row type, in these
+     * cases they must define system specific alternatives to a Values operator,
+     * such as inserting a limit 0 instead of a filter on top of the original
+     * input.
+     *
+     * The default implementation of this method is for the static schema case
+     * which converts the input into an EmptyRel.
+     *
+     * @param input rel to replace, assumes caller has already determined
+     *              equivalence to Values operation for 0 records or a
+     *              false filter.
+     * @return equivalent but less expensive replacement rel
+     */
+    protected RelNode createEmptyRelOrEquivalent(Calc input) {
+      return LogicalValues.createEmpty(input.getCluster(),
+        input.getRowType());
+    }
+
         public void onMatch(RelOptRuleCall call) {
           LogicalCalc calc = call.rel(0);
           RexProgram program = calc.getProgram();
@@ -284,9 +372,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
                   || RexUtil.isNullLiteral(newConditionExp, true)) {
                 // condition is always NULL or FALSE - replace calc
                 // with empty
-                call.transformTo(
-                    LogicalValues.createEmpty(calc.getCluster(),
-                        calc.getRowType()));
+                call.transformTo(createEmptyRelOrEquivalent(calc));
                 return;
               } else {
                 builder.addCondition(list.get(conditionIndex));
