@@ -24,10 +24,9 @@ import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.EquiJoin;
+import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinInfo;
-import org.apache.calcite.rel.core.Project;
-import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.logical.LogicalCalc;
 import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.logical.LogicalProject;
@@ -122,111 +121,111 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
       super(Filter.class, description);
     }
 
-        public void onMatch(RelOptRuleCall call) {
-          final LogicalFilter filter = call.rel(0);
-          final List<RexNode> expList =
-              Lists.newArrayList(filter.getCondition());
-          RexNode newConditionExp;
-          boolean reduced;
-          final RelOptPredicateList predicates =
-              RelMetadataQuery.getPulledUpPredicates(filter.getInput());
-          if (reduceExpressions(filter, expList, predicates)) {
-            assert expList.size() == 1;
-            newConditionExp = expList.get(0);
-            reduced = true;
-          } else {
-            // No reduction, but let's still test the original
-            // predicate to see if it was already a constant,
-            // in which case we don't need any runtime decision
-            // about filtering.
-            newConditionExp = filter.getCondition();
-            reduced = false;
-          }
-          if (newConditionExp.isAlwaysTrue()) {
-            call.transformTo(
-                filter.getInput());
-          } else if (newConditionExp instanceof RexLiteral
-              || RexUtil.isNullLiteral(newConditionExp, true)) {
-            call.transformTo(createEmptyRelOrEquivalent(filter));
-          } else if (reduced) {
-            call.transformTo(
-                RelOptUtil.createFilter(filter.getInput(), expList.get(0)));
-          } else {
-            if (newConditionExp instanceof RexCall) {
-              RexCall rexCall = (RexCall) newConditionExp;
-              boolean reverse =
-                  rexCall.getOperator()
-                      == SqlStdOperatorTable.NOT;
-              if (reverse) {
-                rexCall = (RexCall) rexCall.getOperands().get(0);
-              }
-              reduceNotNullableFilter(call, filter, rexCall, reverse);
-            }
-            return;
-          }
-
-          // New plan is absolutely better than old plan.
-          call.getPlanner().setImportance(filter, 0.0);
-        }
-
-        /**
-         * For static schema systems, a filter that is always false or null can be
-         * replaced by a values operator that produces no rows, as the schema
-         * information can just be taken from the input Rel. In dynamic schema
-         * environments, the filter might have an unknown input type, in these cases
-         * they must define a system specific alternative to a Values operator, such
-         * as inserting a limit 0 instead of a filter on top of the original input.
-         *
-         * The default implementation of this method is for the static schema case
-         * which converts the input into an EmptyRel.
-         *
-         * @param input rel to replace, assumes caller has already determined
-         *              equivalence to Values operation for 0 records or a
-         *              false filter.
-         * @return equivalent but less expensive replacement rel
-         */
-        protected RelNode createEmptyRelOrEquivalent(Filter input) {
-          return LogicalValues.createEmpty(input.getCluster(),
-            input.getRowType());
-        }
-
-        private void reduceNotNullableFilter(
-            RelOptRuleCall call,
-            LogicalFilter filter,
-            RexCall rexCall,
-            boolean reverse) {
-          // If the expression is a IS [NOT] NULL on a non-nullable
-          // column, then we can either remove the filter or replace
-          // it with an Empty.
-          SqlOperator op = rexCall.getOperator();
-          boolean alwaysTrue;
-          switch (rexCall.getKind()) {
-          case IS_NULL:
-          case IS_UNKNOWN:
-            alwaysTrue = false;
-            break;
-          case IS_NOT_NULL:
-            alwaysTrue = true;
-            break;
-          default:
-            return;
-          }
+    public void onMatch(RelOptRuleCall call) {
+      final LogicalFilter filter = call.rel(0);
+      final List<RexNode> expList =
+          Lists.newArrayList(filter.getCondition());
+      RexNode newConditionExp;
+      boolean reduced;
+      final RelOptPredicateList predicates =
+          RelMetadataQuery.getPulledUpPredicates(filter.getInput());
+      if (reduceExpressions(filter, expList, predicates)) {
+        assert expList.size() == 1;
+        newConditionExp = expList.get(0);
+        reduced = true;
+      } else {
+        // No reduction, but let's still test the original
+        // predicate to see if it was already a constant,
+        // in which case we don't need any runtime decision
+        // about filtering.
+        newConditionExp = filter.getCondition();
+        reduced = false;
+      }
+      if (newConditionExp.isAlwaysTrue()) {
+        call.transformTo(
+            filter.getInput());
+      } else if (newConditionExp instanceof RexLiteral
+          || RexUtil.isNullLiteral(newConditionExp, true)) {
+        call.transformTo(createEmptyRelOrEquivalent(filter));
+      } else if (reduced) {
+        call.transformTo(
+            RelOptUtil.createFilter(filter.getInput(), expList.get(0)));
+      } else {
+        if (newConditionExp instanceof RexCall) {
+          RexCall rexCall = (RexCall) newConditionExp;
+          boolean reverse =
+              rexCall.getOperator()
+                  == SqlStdOperatorTable.NOT;
           if (reverse) {
-            alwaysTrue = !alwaysTrue;
+            rexCall = (RexCall) rexCall.getOperands().get(0);
           }
-          RexNode operand = rexCall.getOperands().get(0);
-          if (operand instanceof RexInputRef) {
-            RexInputRef inputRef = (RexInputRef) operand;
-            if (!inputRef.getType().isNullable()) {
-              if (alwaysTrue) {
-                call.transformTo(filter.getInput());
-              } else {
-                call.transformTo(createEmptyRelOrEquivalent(filter));
-              }
-            }
+          reduceNotNullableFilter(call, filter, rexCall, reverse);
+        }
+        return;
+      }
+
+      // New plan is absolutely better than old plan.
+      call.getPlanner().setImportance(filter, 0.0);
+    }
+
+    /**
+     * For static schema systems, a filter that is always false or null can be
+     * replaced by a values operator that produces no rows, as the schema
+     * information can just be taken from the input Rel. In dynamic schema
+     * environments, the filter might have an unknown input type, in these cases
+     * they must define a system specific alternative to a Values operator, such
+     * as inserting a limit 0 instead of a filter on top of the original input.
+     *
+     * The default implementation of this method is for the static schema case
+     * which converts the input into an EmptyRel.
+     *
+     * @param input rel to replace, assumes caller has already determined
+     *              equivalence to Values operation for 0 records or a
+     *              false filter.
+     * @return equivalent but less expensive replacement rel
+     */
+    protected RelNode createEmptyRelOrEquivalent(Filter input) {
+      return LogicalValues.createEmpty(input.getCluster(),
+        input.getRowType());
+    }
+
+    private void reduceNotNullableFilter(
+        RelOptRuleCall call,
+        LogicalFilter filter,
+        RexCall rexCall,
+        boolean reverse) {
+      // If the expression is a IS [NOT] NULL on a non-nullable
+      // column, then we can either remove the filter or replace
+      // it with an Empty.
+      SqlOperator op = rexCall.getOperator();
+      boolean alwaysTrue;
+      switch (rexCall.getKind()) {
+      case IS_NULL:
+      case IS_UNKNOWN:
+        alwaysTrue = false;
+        break;
+      case IS_NOT_NULL:
+        alwaysTrue = true;
+        break;
+      default:
+        return;
+      }
+      if (reverse) {
+        alwaysTrue = !alwaysTrue;
+      }
+      RexNode operand = rexCall.getOperands().get(0);
+      if (operand instanceof RexInputRef) {
+        RexInputRef inputRef = (RexInputRef) operand;
+        if (!inputRef.getType().isNullable()) {
+          if (alwaysTrue) {
+            call.transformTo(filter.getInput());
+          } else {
+            call.transformTo(createEmptyRelOrEquivalent(filter));
           }
         }
-      };
+      }
+    }
+  };
 
   public static final ReduceExpressionsRule PROJECT_INSTANCE =
       new ReduceExpressionsRule(LogicalProject.class,
@@ -335,64 +334,64 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
         input.getRowType());
     }
 
-        public void onMatch(RelOptRuleCall call) {
-          LogicalCalc calc = call.rel(0);
-          RexProgram program = calc.getProgram();
-          final List<RexNode> exprList = program.getExprList();
+    public void onMatch(RelOptRuleCall call) {
+      LogicalCalc calc = call.rel(0);
+      RexProgram program = calc.getProgram();
+      final List<RexNode> exprList = program.getExprList();
 
-          // Form a list of expressions with sub-expressions fully expanded.
-          final List<RexNode> expandedExprList = Lists.newArrayList();
-          final RexShuttle shuttle =
-              new RexShuttle() {
-                public RexNode visitLocalRef(RexLocalRef localRef) {
-                  return expandedExprList.get(localRef.getIndex());
-                }
-              };
-          for (RexNode expr : exprList) {
-            expandedExprList.add(expr.accept(shuttle));
-          }
-          final RelOptPredicateList predicates = RelOptPredicateList.EMPTY;
-          if (reduceExpressions(calc, expandedExprList, predicates)) {
-            final RexProgramBuilder builder =
-                new RexProgramBuilder(
-                    calc.getInput().getRowType(),
-                    calc.getCluster().getRexBuilder());
-            final List<RexLocalRef> list = Lists.newArrayList();
-            for (RexNode expr : expandedExprList) {
-              list.add(builder.registerInput(expr));
+      // Form a list of expressions with sub-expressions fully expanded.
+      final List<RexNode> expandedExprList = Lists.newArrayList();
+      final RexShuttle shuttle =
+          new RexShuttle() {
+            public RexNode visitLocalRef(RexLocalRef localRef) {
+              return expandedExprList.get(localRef.getIndex());
             }
-            if (program.getCondition() != null) {
-              final int conditionIndex =
-                  program.getCondition().getIndex();
-              final RexNode newConditionExp =
-                  expandedExprList.get(conditionIndex);
-              if (newConditionExp.isAlwaysTrue()) {
-                // condition is always TRUE - drop it
-              } else if (newConditionExp instanceof RexLiteral
-                  || RexUtil.isNullLiteral(newConditionExp, true)) {
-                // condition is always NULL or FALSE - replace calc
-                // with empty
-                call.transformTo(createEmptyRelOrEquivalent(calc));
-                return;
-              } else {
-                builder.addCondition(list.get(conditionIndex));
-              }
-            }
-            int k = 0;
-            for (RexLocalRef projectExpr : program.getProjectList()) {
-              final int index = projectExpr.getIndex();
-              builder.addProject(
-                  list.get(index).getIndex(),
-                  program.getOutputRowType().getFieldNames().get(k++));
-            }
-            call.transformTo(
-                LogicalCalc.create(calc.getInput(), builder.getProgram()));
-
-            // New plan is absolutely better than old plan.
-            call.getPlanner().setImportance(calc, 0.0);
+          };
+      for (RexNode expr : exprList) {
+        expandedExprList.add(expr.accept(shuttle));
+      }
+      final RelOptPredicateList predicates = RelOptPredicateList.EMPTY;
+      if (reduceExpressions(calc, expandedExprList, predicates)) {
+        final RexProgramBuilder builder =
+            new RexProgramBuilder(
+                calc.getInput().getRowType(),
+                calc.getCluster().getRexBuilder());
+        final List<RexLocalRef> list = Lists.newArrayList();
+        for (RexNode expr : expandedExprList) {
+          list.add(builder.registerInput(expr));
+        }
+        if (program.getCondition() != null) {
+          final int conditionIndex =
+              program.getCondition().getIndex();
+          final RexNode newConditionExp =
+              expandedExprList.get(conditionIndex);
+          if (newConditionExp.isAlwaysTrue()) {
+            // condition is always TRUE - drop it
+          } else if (newConditionExp instanceof RexLiteral
+              || RexUtil.isNullLiteral(newConditionExp, true)) {
+            // condition is always NULL or FALSE - replace calc
+            // with empty
+            call.transformTo(createEmptyRelOrEquivalent(calc));
+            return;
+          } else {
+            builder.addCondition(list.get(conditionIndex));
           }
         }
-      };
+        int k = 0;
+        for (RexLocalRef projectExpr : program.getProjectList()) {
+          final int index = projectExpr.getIndex();
+          builder.addProject(
+              list.get(index).getIndex(),
+              program.getOutputRowType().getFieldNames().get(k++));
+        }
+        call.transformTo(
+            LogicalCalc.create(calc.getInput(), builder.getProgram()));
+
+        // New plan is absolutely better than old plan.
+        call.getPlanner().setImportance(calc, 0.0);
+      }
+    }
+  };
 
   //~ Constructors -----------------------------------------------------------
 
