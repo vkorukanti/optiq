@@ -109,7 +109,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
   public static class ReduceFilterRule extends ReduceExpressionsRule {
 
     ReduceFilterRule() {
-      super(Filter.class, "ReduceExpressionsRule[Filter]");
+      super(Filter.class, "ReduceExpressionsRule_Filter");
     }
 
     /**
@@ -229,7 +229,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
 
   public static final ReduceExpressionsRule PROJECT_INSTANCE =
       new ReduceExpressionsRule(LogicalProject.class,
-          "ReduceExpressionsRule(Project)") {
+          "ReduceExpressionsRule_Project") {
         public void onMatch(RelOptRuleCall call) {
           LogicalProject project = call.rel(0);
           final RelOptPredicateList predicates =
@@ -249,7 +249,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
 
   public static final ReduceExpressionsRule JOIN_INSTANCE =
       new ReduceExpressionsRule(Join.class,
-          "ReduceExpressionsRule(Join)") {
+          "ReduceExpressionsRule_Join") {
         public void onMatch(RelOptRuleCall call) {
           final Join join = call.rel(0);
           final List<RexNode> expList = Lists.newArrayList(join.getCondition());
@@ -299,7 +299,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
   public static class ReduceCalcRule extends ReduceExpressionsRule {
 
     ReduceCalcRule() {
-      super(Calc.class, "ReduceExpressionsRule[Calc]");
+      super(Calc.class, "ReduceExpressionsRule_Calc");
     }
 
     /**
