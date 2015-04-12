@@ -109,7 +109,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
   public static class ReduceFilterRule extends ReduceExpressionsRule {
 
     ReduceFilterRule() {
-      super(Filter.class, "ReduceExpressionsRule_Filter");
+      super(LogicalFilter.class, "ReduceExpressionsRule_Filter");
     }
 
     /**
@@ -122,7 +122,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
     }
 
     public void onMatch(RelOptRuleCall call) {
-      final LogicalFilter filter = call.rel(0);
+      final Filter filter = call.rel(0);
       final List<RexNode> expList =
           Lists.newArrayList(filter.getCondition());
       RexNode newConditionExp;
@@ -191,7 +191,7 @@ public abstract class ReduceExpressionsRule extends RelOptRule {
 
     private void reduceNotNullableFilter(
         RelOptRuleCall call,
-        LogicalFilter filter,
+        Filter filter,
         RexCall rexCall,
         boolean reverse) {
       // If the expression is a IS [NOT] NULL on a non-nullable
